@@ -21,9 +21,10 @@ SCREEN = kn.Rect(0, 0, 1280, 720)
 EMITS_PER_FRAME = 32
 
 cmdline = ArgumentParser(description='Kraken/tinyecs demo')
-cmdline.add_argument('-s', '--disable-scaling', action='store_true', default=False, help='Disable scaling effects')
-cmdline.add_argument('-r', '--disable-rotation', action='store_true', default=False, help='Disable rotation effects')
 cmdline.add_argument('-a', '--disable-alpha', action='store_true', default=False, help='Disable alpha blending')
+cmdline.add_argument('-r', '--disable-rotation', action='store_true', default=False, help='Disable rotation effects')
+cmdline.add_argument('-s', '--disable-scaling', action='store_true', default=False, help='Disable scaling effects')
+cmdline.add_argument('-v', '--verbose', action='store_true', default=False, help='Verbose output')
 opts = cmdline.parse_args(sys.argv[1:])
 
 
@@ -173,7 +174,8 @@ def main():
         ecs.run_system(dt, sys_lifetime, Comp.LIFETIME)
         ecs.run_system(dt, sys_render_with_fade, Comp.SPRITE_ID, Comp.TRANSFORM, Comp.LIFETIME, do_fade=not opts.disable_alpha)
 
-        # print(f'Number of sprites left: {len(ecs.eidx)}')
+        if opts.verbose:
+            print(f'Number of sprites left: {len(ecs.eidx)}')
 
         kn.renderer.present()
 
