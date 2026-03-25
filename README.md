@@ -1,37 +1,27 @@
-# FIXME project name
+# kninyecs, the **K**rake**n**-Engine/tinyecs collab demo
 
-tl;dr description here
+tinyecs is framework-agnostic, it works with pygame, console programs, and
+also the Kraken-Engine.  This is a short demo showcasing that.
 
 ## Synopsis
 
+**In a venv...**
+
 ```console
-one-liner usage example
+pip install git+https://github.com/dickerdackel/kninyecs
+kninyecs
 ```
 
 ## Usage
 
-Detailed usage and sample code for libraries, full help and options for tools.
-
-## Installation
-
-Installation instructions + requirements (should come automagically with
-pyproject.toml)
-
-```console
-sample install session
-```
-
-## Support / Contributing
-
-Issues can be opened on [Github](https://github.com/dickerdackel/FIXME/issues)
+Just watch bouncing, rotating, and scaling sprites fade away.  Press the mouse
+button if you want more.
 
 ## Credits / Acknowledgements
 
-* Thanks to [Make a README](https://www.makeareadme.com/)
+* Sprites from the [Kenney.nl Cube Pets pack](https://kenney.nl/assets/cube-pets)
 
 ## License
-
-FIXME
 
 This software is provided under the MIT license.
 
