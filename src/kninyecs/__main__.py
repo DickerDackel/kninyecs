@@ -1,3 +1,6 @@
+import sys
+
+from argparse import ArgumentParser
 from collections import defaultdict
 from enum import StrEnum, auto
 from importlib.resources import files
@@ -16,6 +19,12 @@ ASSETS = files('kninyecs.assets')
 SCREEN = kn.Rect(0, 0, 1280, 720)
 
 EMITS_PER_FRAME = 32
+
+cmdline = ArgumentParser(description='Kraken/tinyecs demo')
+cmdline.add_argument('-s', '--disable-scaling', action='store_true', default=False, help='Disable scaling effects')
+cmdline.add_argument('-r', '--disable-rotation', action='store_true', default=False, help='Disable rotation effects')
+cmdline.add_argument('-a', '--disable-alpha', action='store_true', default=False, help='Disable alpha blending')
+opts = cmdline.parse_args(sys.argv[1:])
 
 
 class Comp(StrEnum):
@@ -115,12 +124,15 @@ def sys_momentum(dt, eid, transform, momentum):
     transform.pos += momentum * dt
 
 
-def sys_render_with_fade(dt, eid, sprite, transform, lifetime):
-    alpha = 1 - lifetime.progress
-    bk_alpha = sprite.texture.alpha
-    sprite.texture.alpha = alpha
-    kn.renderer.draw(sprite.texture, transform, sprite.anchor, sprite.pivot)
-    sprite.texture.alpha = bk_alpha
+def sys_render_with_fade(dt, eid, sprite, transform, lifetime, *, do_fade=True):
+    if not do_fade:
+        kn.renderer.draw(sprite.texture, transform, sprite.anchor, sprite.pivot)
+    else:
+        alpha = 1 - lifetime.progress
+        bk_alpha = sprite.texture.alpha
+        sprite.texture.alpha = alpha
+        kn.renderer.draw(sprite.texture, transform, sprite.anchor, sprite.pivot)
+        sprite.texture.alpha = bk_alpha
 
 
 def sys_scale(dt, eid, transform, auto_scale):
@@ -136,9 +148,8 @@ def main():
 
     slurp_textures()
 
-    # for _ in range(50):
-    #     mk_thing(choice(list(CACHE['sprites'])))
-    mk_thing(choice(list(CACHE['sprites'])))
+    for _ in range(50):
+        mk_thing(choice(list(CACHE['sprites'])))
 
     while kn.window.is_open():
         dt = kn.time.get_delta()
@@ -154,11 +165,13 @@ def main():
         kn.renderer.clear(kn.color.from_hex('#2f4f4f'))
 
         ecs.run_system(dt, sys_momentum, Comp.TRANSFORM, Comp.MOMENTUM)
-        ecs.run_system(dt, sys_angle, Comp.TRANSFORM, Comp.AUTO_ANGLE)
-        ecs.run_system(dt, sys_scale, Comp.TRANSFORM, Comp.AUTO_SCALE)
+        if not opts.disable_rotation:
+            ecs.run_system(dt, sys_angle, Comp.TRANSFORM, Comp.AUTO_ANGLE)
+        if not opts.disable_scaling:
+            ecs.run_system(dt, sys_scale, Comp.TRANSFORM, Comp.AUTO_SCALE)
         ecs.run_system(dt, sys_bounce, Comp.TRANSFORM, Comp.MOMENTUM, Comp.WORLD)
         ecs.run_system(dt, sys_lifetime, Comp.LIFETIME)
-        ecs.run_system(dt, sys_render_with_fade, Comp.SPRITE_ID, Comp.TRANSFORM, Comp.LIFETIME)
+        ecs.run_system(dt, sys_render_with_fade, Comp.SPRITE_ID, Comp.TRANSFORM, Comp.LIFETIME, do_fade=not opts.disable_alpha)
 
         # print(f'Number of sprites left: {len(ecs.eidx)}')
 
