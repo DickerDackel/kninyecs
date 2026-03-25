@@ -9,13 +9,12 @@ from typing import NamedTuple
 import pykraken as kn
 import tinyecs as ecs
 
-from pgcooldown import Cooldown, LerpThing, LTRepeat
-
 if 'XDG_SESSION_TYPE' in environ and environ['XDG_SESSION_TYPE'] == 'wayland':
     environ['SDL_VIDEODRIVER'] = 'wayland'
 
 
 FPS = 60
+PI2 = 2 * pi
 
 CACHE = defaultdict(dict)
 ASSETS = files('kninyecs.assets')
@@ -47,21 +46,34 @@ def slurp_textures():
         CACHE['sprites'][p.stem] = ZeSprite(texture, anchor=center, pivot=center)
 
 
-def mk_thing(sprite_id, position=None):
-    if choice((0, 1)):
-        lt_angle = LerpThing(0, 2 * pi, random() * 4.75 + 0.25, repeat=LTRepeat.LOOP)
+def _timer_to_angle(t):
+    return PI2 * t.progress
+
+
+def _timer_to_scale(timer):
+    if timer.progress < 0.5:
+        t = 2 * timer.progress
     else:
-        lt_angle = LerpThing(2 * pi, 0, random() * 4.75 + 0.25, repeat=LTRepeat.LOOP)
-    lt_scale = LerpThing(0.5, 2, random() * 4.75 + 0.25, repeat=LTRepeat.BOUNCE)
-    lifetime = Cooldown(randint(3, 10))
+        t = 1 - (2 * timer.progress - 1)
+
+    return 1.5 * t + 0.5
+
+
+def mk_thing(sprite_id, position=None):
+    auto_angle = kn.Timer(random() * 4.75 + 0.25)
+    auto_scale = kn.Timer(random() * 4.75 + 0.25)
+    lifetime = kn.Timer(randint(3, 10))
+    auto_angle.start()
+    auto_scale.start()
+    lifetime.start()
 
     if position is None:
         pos = kn.Vec2(randint(0, int(SCREEN.w)), randint(0, int(SCREEN.h)))
     else:
         pos = kn.Vec2(*position)
 
-    angle = lt_angle()
-    scale = lt_scale()
+    angle = _timer_to_angle(auto_angle)
+    scale = _timer_to_scale(auto_scale)
     transform = kn.Transform(pos=pos, angle=angle, scale=scale)
 
     momentum = kn.Vec2(randint(100, 250), 0)
@@ -71,14 +83,16 @@ def mk_thing(sprite_id, position=None):
     ecs.add_component(eid, Comp.SPRITE_ID, CACHE['sprites'][sprite_id])
     ecs.add_component(eid, Comp.TRANSFORM, transform)
     ecs.add_component(eid, Comp.MOMENTUM, momentum)
-    ecs.add_component(eid, Comp.AUTO_ANGLE, lt_angle)
-    ecs.add_component(eid, Comp.AUTO_SCALE, lt_scale)
+    ecs.add_component(eid, Comp.AUTO_ANGLE, auto_angle)
+    ecs.add_component(eid, Comp.AUTO_SCALE, auto_scale)
     ecs.add_component(eid, Comp.LIFETIME, lifetime)
     ecs.add_component(eid, Comp.WORLD, SCREEN)
 
 
 def sys_angle(dt, eid, transform, auto_angle):
-    transform.angle = auto_angle()
+    transform.angle = _timer_to_angle(auto_angle)
+    if auto_angle.done:
+        auto_angle.start()
 
 
 def sys_bounce(dt, eid, transform, momentum, world):
@@ -98,7 +112,7 @@ def sys_bounce(dt, eid, transform, momentum, world):
 
 
 def sys_lifetime(dt, eid, lifetime):
-    if lifetime.cold():
+    if lifetime.done:
         ecs.remove_entity(eid)
 
 
@@ -107,7 +121,7 @@ def sys_momentum(dt, eid, transform, momentum):
 
 
 def sys_render_with_fade(dt, eid, sprite, transform, lifetime):
-    alpha = 1 - lifetime.normalized
+    alpha = 1 - lifetime.progress
     bk_alpha = sprite.texture.alpha
     sprite.texture.alpha = alpha
     kn.renderer.draw(sprite.texture, transform, sprite.anchor, sprite.pivot)
@@ -115,7 +129,9 @@ def sys_render_with_fade(dt, eid, sprite, transform, lifetime):
 
 
 def sys_scale(dt, eid, transform, auto_scale):
-    transform.scale = kn.Vec2(auto_scale())
+    transform.scale = kn.Vec2(_timer_to_scale(auto_scale))
+    if auto_scale.done:
+        auto_scale.start()
 
 
 def main():
@@ -125,8 +141,9 @@ def main():
 
     slurp_textures()
 
-    for _ in range(50):
-        mk_thing(choice(list(CACHE['sprites'])))
+    # for _ in range(50):
+    #     mk_thing(choice(list(CACHE['sprites'])))
+    mk_thing(choice(list(CACHE['sprites'])))
 
     while kn.window.is_open():
         dt = kn.time.get_delta()
@@ -148,7 +165,7 @@ def main():
         ecs.run_system(dt, sys_lifetime, Comp.LIFETIME)
         ecs.run_system(dt, sys_render_with_fade, Comp.SPRITE_ID, Comp.TRANSFORM, Comp.LIFETIME)
 
-        print(f'Number of sprites left: {len(ecs.eidx)}')
+        # print(f'Number of sprites left: {len(ecs.eidx)}')
 
         kn.renderer.present()
 
