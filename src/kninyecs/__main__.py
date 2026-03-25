@@ -2,16 +2,11 @@ from collections import defaultdict
 from enum import StrEnum, auto
 from importlib.resources import files
 from math import pi, radians
-from os import environ
 from random import choice, randint, random
 from typing import NamedTuple
 
 import pykraken as kn
 import tinyecs as ecs
-
-if 'XDG_SESSION_TYPE' in environ and environ['XDG_SESSION_TYPE'] == 'wayland':
-    environ['SDL_VIDEODRIVER'] = 'wayland'
-
 
 FPS = 60
 PI2 = 2 * pi
