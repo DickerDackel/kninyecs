@@ -1,6 +1,6 @@
 [project]
-name = "FIXME"
-description = "FIXME"
+name = "kninyecs"
+description = "The Kraken-Engine/tinyecs collab that's taking the internet by storm"
 version = "0.0.1"
 readme = "README.md"
 
@@ -18,14 +18,17 @@ classifiers = [
 license = "MIT"
 license-files = ["LICENSE"]
 
-dependencies = [ ]
+dependencies = [
+    'kraken-engine',
+    'tinyecs',
+]
 
 [project.scripts]
-FIXME = "package.module:main"
+kninyecs = "kninyecs.__main__:main"
 
 [project.urls]
-homepage = "https://github.com/dickerdackel/FIXME"
-bugtracker = "https://github.com/DickerDackel/FIXME/issues"
+homepage = "https://github.com/dickerdackel/kninyecs"
+bugtracker = "https://github.com/DickerDackel/kninyecs/issues"
 
 [build-system]
 requires = ["setuptools"]
