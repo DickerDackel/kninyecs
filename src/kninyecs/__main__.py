@@ -21,7 +21,7 @@ CACHE = defaultdict(dict)
 ASSETS = files('kninyecs.assets')
 SCREEN = kn.Rect(0, 0, 1280, 720)
 
-EMITS_PER_FRAME = 5
+EMITS_PER_FRAME = 32
 
 
 class Comp(StrEnum):
@@ -135,7 +135,7 @@ def main():
                 if e.key == kn.K_ESC:
                     raise SystemExit
 
-        if kn.mouse.is_pressed(1):
+        if kn.mouse.is_pressed(kn.M_LEFT):
             for _ in range(EMITS_PER_FRAME):
                 mk_thing(choice(list(CACHE['sprites'])), kn.mouse.get_pos())
 
