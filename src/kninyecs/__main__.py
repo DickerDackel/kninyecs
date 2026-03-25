@@ -18,12 +18,11 @@ CACHE = defaultdict(dict)
 ASSETS = files('kninyecs.assets')
 SCREEN = kn.Rect(0, 0, 1280, 720)
 
-EMITS_PER_FRAME = 32
-
 cmdline = ArgumentParser(description='Kraken/tinyecs demo')
 cmdline.add_argument('-a', '--disable-alpha', action='store_true', default=False, help='Disable alpha blending')
 cmdline.add_argument('-r', '--disable-rotation', action='store_true', default=False, help='Disable rotation effects')
 cmdline.add_argument('-s', '--disable-scaling', action='store_true', default=False, help='Disable scaling effects')
+cmdline.add_argument('-e', '--emits', type=int, default=5, help='Number of emits per frame on mousepress')
 cmdline.add_argument('-v', '--verbose', action='store_true', default=False, help='Verbose output')
 opts = cmdline.parse_args(sys.argv[1:])
 
@@ -160,7 +159,7 @@ def main():
                     raise SystemExit
 
         if kn.mouse.is_pressed(kn.M_LEFT):
-            for _ in range(EMITS_PER_FRAME):
+            for _ in range(opts.emits):
                 mk_thing(choice(list(CACHE['sprites'])), kn.mouse.get_pos())
 
         kn.renderer.clear(kn.color.from_hex('#2f4f4f'))
