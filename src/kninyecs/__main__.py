@@ -51,7 +51,7 @@ def mk_thing(sprite_id, position=None):
     if choice((0, 1)):
         lt_angle = LerpThing(0, 2 * pi, random() * 4.75 + 0.25, repeat=LTRepeat.LOOP)
     else:
-        lt_angle = LerpThing(2 * pi, random() * 4.75 + 0.25, 0, repeat=LTRepeat.LOOP)
+        lt_angle = LerpThing(2 * pi, 0, random() * 4.75 + 0.25, repeat=LTRepeat.LOOP)
     lt_scale = LerpThing(0.5, 2, random() * 4.75 + 0.25, repeat=LTRepeat.BOUNCE)
     lifetime = Cooldown(randint(3, 10))
 
