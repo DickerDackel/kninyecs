@@ -26,6 +26,9 @@ dependencies = [
 [project.scripts]
 kninyecs = "kninyecs.__main__:main"
 
+[tool.setuptools]
+include-package-data = true
+
 [project.urls]
 homepage = "https://github.com/dickerdackel/kninyecs"
 bugtracker = "https://github.com/DickerDackel/kninyecs/issues"
