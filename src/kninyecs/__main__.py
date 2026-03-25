@@ -106,8 +106,12 @@ def sys_momentum(dt, eid, transform, momentum):
     transform.pos += momentum * dt
 
 
-def sys_render(dt, eid, sprite, transform):
+def sys_render_with_fade(dt, eid, sprite, transform, lifetime):
+    alpha = 1 - lifetime.normalized
+    bk_alpha = sprite.texture.alpha
+    sprite.texture.alpha = alpha
     kn.renderer.draw(sprite.texture, transform, sprite.anchor, sprite.pivot)
+    sprite.texture.alpha = bk_alpha
 
 
 def sys_scale(dt, eid, transform, auto_scale):
@@ -137,12 +141,12 @@ def main():
 
         kn.renderer.clear(kn.color.from_hex('#2f4f4f'))
 
-        ecs.run_system(dt, sys_render, Comp.SPRITE_ID, Comp.TRANSFORM)
         ecs.run_system(dt, sys_momentum, Comp.TRANSFORM, Comp.MOMENTUM)
         ecs.run_system(dt, sys_angle, Comp.TRANSFORM, Comp.AUTO_ANGLE)
         ecs.run_system(dt, sys_scale, Comp.TRANSFORM, Comp.AUTO_SCALE)
         ecs.run_system(dt, sys_bounce, Comp.TRANSFORM, Comp.MOMENTUM, Comp.WORLD)
         ecs.run_system(dt, sys_lifetime, Comp.LIFETIME)
+        ecs.run_system(dt, sys_render_with_fade, Comp.SPRITE_ID, Comp.TRANSFORM, Comp.LIFETIME)
 
         print(f'Number of sprites left: {len(ecs.eidx)}')
 
