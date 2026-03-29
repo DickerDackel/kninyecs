@@ -1,3 +1,4 @@
+import json
 import sys
 
 from argparse import ArgumentParser
@@ -18,6 +19,9 @@ CACHE = defaultdict(dict)
 ASSETS = files('kninyecs.assets')
 SCREEN = kn.Rect(0, 0, 1280, 720)
 
+ATLAS_IMG = str(ASSETS / 'atlas.png')
+ATLAS_CFG = str(ASSETS / 'atlas.json')
+
 cmdline = ArgumentParser(description='Kraken/tinyecs demo')
 cmdline.add_argument('-a', '--disable-alpha', action='store_true', default=False, help='Disable alpha blending')
 cmdline.add_argument('-r', '--disable-rotation', action='store_true', default=False, help='Disable rotation effects')
@@ -32,22 +36,28 @@ class Comp(StrEnum):
     AUTO_SCALE = auto()
     LIFETIME = auto()
     MOMENTUM = auto()
-    SPRITE_ID = auto()
+    SPRITE = auto()
     TRANSFORM = auto()
     WORLD = auto()
 
 
 class ZeSprite(NamedTuple):
     texture: kn.Texture
+    clip: kn.Rect
     anchor: kn.Vec2
     pivot: kn.Vec2
 
 
 def slurp_textures():
-    for p in ASSETS.glob('*.png'):
-        texture = kn.Texture(str(p))
-        center = kn.Vec2(0.5)
-        CACHE['sprites'][p.stem] = ZeSprite(texture, anchor=center, pivot=center)
+    texture = kn.Texture(ATLAS_IMG)
+    with open(ATLAS_CFG) as f:
+        location = json.load(f)
+
+    return {name: ZeSprite(texture=texture,
+                           clip=kn.Rect(*clip),
+                           anchor=kn.Vec2(0.5),
+                           pivot=kn.Vec2(0.5))
+            for name, clip in location.items()}
 
 
 def _timer_to_angle(t):
@@ -84,7 +94,7 @@ def mk_thing(sprite_id, position=None):
     momentum.rotate(radians(randint(0, 359)))
 
     eid = ecs.create_entity()
-    ecs.add_component(eid, Comp.SPRITE_ID, CACHE['sprites'][sprite_id])
+    ecs.add_component(eid, Comp.SPRITE, CACHE['atlas'][sprite_id])
     ecs.add_component(eid, Comp.TRANSFORM, transform)
     ecs.add_component(eid, Comp.MOMENTUM, momentum)
     ecs.add_component(eid, Comp.AUTO_ANGLE, auto_angle)
@@ -125,6 +135,7 @@ def sys_momentum(dt, eid, transform, momentum):
 
 
 def sys_render_with_fade(dt, eid, sprite, transform, lifetime, *, do_fade=True):
+    sprite.texture.clip_area = sprite.clip
     if not do_fade:
         kn.renderer.draw(sprite.texture, transform, sprite.anchor, sprite.pivot)
     else:
@@ -146,10 +157,10 @@ def main():
     kn.time.set_target(FPS)
     kn.window.create('Ze Kraken/tinyecs collab demo example zingy', int(SCREEN.w), int(SCREEN.h))
 
-    slurp_textures()
+    CACHE['atlas'] = slurp_textures()
 
     for _ in range(50):
-        mk_thing(choice(list(CACHE['sprites'])))
+        mk_thing(choice(list(CACHE['atlas'])))
 
     while kn.window.is_open():
         dt = kn.time.get_delta()
@@ -160,7 +171,7 @@ def main():
 
         if kn.mouse.is_pressed(kn.M_LEFT):
             for _ in range(opts.emits):
-                mk_thing(choice(list(CACHE['sprites'])), kn.mouse.get_pos())
+                mk_thing(choice(list(CACHE['atlas'])), kn.mouse.get_pos())
 
         kn.renderer.clear(kn.color.from_hex('#2f4f4f'))
 
@@ -171,7 +182,7 @@ def main():
             ecs.run_system(dt, sys_scale, Comp.TRANSFORM, Comp.AUTO_SCALE)
         ecs.run_system(dt, sys_bounce, Comp.TRANSFORM, Comp.MOMENTUM, Comp.WORLD)
         ecs.run_system(dt, sys_lifetime, Comp.LIFETIME)
-        ecs.run_system(dt, sys_render_with_fade, Comp.SPRITE_ID, Comp.TRANSFORM, Comp.LIFETIME, do_fade=not opts.disable_alpha)
+        ecs.run_system(dt, sys_render_with_fade, Comp.SPRITE, Comp.TRANSFORM, Comp.LIFETIME, do_fade=not opts.disable_alpha)
 
         if opts.verbose:
             print(f'Number of sprites left: {len(ecs.eidx)}')
